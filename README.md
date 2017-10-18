@@ -1,22 +1,22 @@
 # splunk_70_demo
 
 ## Dashboards
-*Metrics Performance (metrics_performance)*
-*Splunk 7.0 Visualizations (splunk_70_visualizations)*
+**Metrics Performance (`metrics_performance`)**  
+**Splunk 7.0 Visualizations (`splunk_70_visualizations`)**
 
 ## Indexes
-*metrics*
+**metrics**  
 Index for Metric Store which doesn't have `splitByIndexKeys` parameter.
 
-*metrics_hash*
-Index for Metric Store with `splitByIndexKeys` parameter. It enables bucket split by specified field(s).
+**metrics_hash**  
+Index for Metric Store with `splitByIndexKeys` parameter. It enables bucket split by specified field(s).  
 See http://docs.splunk.com/Documentation/Splunk/latest/Admin/indexesconf
 
-*collectd_event*
+**collectd_event**  
 Index for Event Store. This is used  for performance comparison to Metric Store in `metrics_performance` dashboard.
 
 ## Sourcetypes
-*collectd_json*
+**collectd_json**  
 Sourcetype for collectd as Event Store. It should be used with `collectd_event` index.
 
 ## How to use?
