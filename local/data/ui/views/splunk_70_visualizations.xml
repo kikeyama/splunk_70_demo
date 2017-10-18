@@ -1,0 +1,291 @@
+<form stylesheet="kikeyama.css">
+  <label>Splunk 7.0 Visualizations</label>
+  <!-- 
+  <row>
+    <panel>
+      <html id="header_metrics" depends="$showMetrics$">
+        <h2>
+          Event Annotation (Metrics Chart &amp; Syslog)
+        </h2>
+      </html>
+      <html id="header_internal" depends="$showInternal$">
+        <h2>
+          Event Annotation (Internal Log)
+        </h2>
+      </html>
+    </panel>
+  </row>
+-->
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>1507474800</earliest>
+        <latest>1507561200</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Event Annotations</title>
+      <input type="dropdown" token="metric_name" id="input_metrics" depends="$showMetrics$">
+        <label></label>
+        <default>memory.buffered.value</default>
+        <fieldForLabel>metric_name</fieldForLabel>
+        <fieldForValue>metric_name</fieldForValue>
+        <search>
+          <query>| mcatalog values(metric_name) as metric_name where index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" 
+| mvexpand metric_name</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="introspection_field" id="input_internal" depends="$showInternal$">
+        <label></label>
+        <default>data.cpu_user_pct</default>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>index=_introspection component=Hostwide 
+| fieldsummary maxvals=1 
+| search field=data.cpu* OR field=data.mem* OR field=data.swap* AND numeric_count&gt;0 
+| fields field</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </input>
+      <input type="link" token="annotation" id="link_switcher">
+        <label></label>
+        <choice value="metrics">Metrics &amp; Syslog</choice>
+        <choice value="internal">Internal Logs</choice>
+        <change>
+          <condition value="metrics">
+            <set token="showMetrics">true</set>
+            <unset token="showInternal"></unset>
+          </condition>
+          <condition value="internal">
+            <unset token="showMetrics"></unset>
+            <set token="showInternal">true</set>
+          </condition>
+        </change>
+        <default>metrics</default>
+      </input>
+      <html id="html_source_metrics" depends="$showMetrics$">
+        <div>
+          <strong>chart</strong>: <code>$metric_name$</code> metric series</div>
+        <div>
+          <strong>event</strong>: <code>/var/log/messages</code>
+        </div>
+      </html>
+      <chart id="chart_metrics" depends="$showMetrics$">
+        <title>Metrics Chart &amp; Syslog</title>
+        <search>
+          <query>| mstats max(_value) as value where metric_name=$metric_name$ AND index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" by host span=10s 
+| xyseries _time host value</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <search type="annotation">
+          <query>index=os host="ip-172-31-41-59" (tag=error OR tag=failure OR tag=info) 
+| eval annotation_label = _raw, annotation_category = tag</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- Event Annotation Search -->
+        <!-- Event Annotation Colors -->
+        <option name="charting.annotation.categoryColors">{"error":"0xff3300","failure":"0xff9900","info":"0x70AD47"}</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <html id="html_code_metrics" depends="$showMetrics$">
+        <pre>
+&lt;chart&gt;
+  &lt;search&gt;
+    &lt;query&gt;| mstats max(_value) as value where metric_name=$metric_name$ AND index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" by host span=10s 
+    | xyseries _time host value&lt;/query&gt;
+    &lt;earliest&gt;$time.earliest$&lt;/earliest&gt;
+    &lt;latest&gt;$time.latest$&lt;/latest&gt;
+    &lt;sampleRatio&gt;1&lt;/sampleRatio&gt;
+  &lt;/search&gt;
+  ...
+  <font color="#ff0000">&lt;!-- Event Annotation Search --&gt;
+  &lt;search type="annotation"&gt;
+    &lt;query&gt;index=os host="ip-172-31-41-59" (tag=error OR tag=failure OR tag=info) 
+    | eval annotation_label = _raw, annotation_category = tag&lt;/query&gt;
+    &lt;earliest&gt;$time.earliest$&lt;/earliest&gt;
+    &lt;latest&gt;$time.latest$&lt;/latest&gt;
+    &lt;sampleRatio&gt;1&lt;/sampleRatio&gt;
+  &lt;/search&gt;</font>
+  ...
+  <font color="#ff0000">&lt;!-- Event Annotation Colors --&gt;
+  &lt;option name="charting.annotation.categoryColors"&gt;{"error":"0xff3300","failure":"0xff9900","info":"0x70AD47"}&lt;/option&gt;</font>
+  ...
+&lt;/chart&gt;
+        </pre>
+      </html>
+      <html id="html_source_internal" depends="$showInternal$">
+        <div>
+          <strong>Chart</strong>: <code>$introspection_field$</code> timechart</div>
+        <div>
+          <strong>Event</strong>: <code>splunkd</code> logs</div>
+      </html>
+      <chart id="chart_internal" depends="$showInternal$">
+        <title>Internal Logs</title>
+        <search type="annotation">
+          <query>index=_internal host=splunk70 sourcetype=splunkd (log_level=ERROR OR log_level=WARN) 
+| eval annotation_label = message, annotation_category = log_level</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <search>
+          <query>index=_introspection host=splunk70 component=Hostwide 
+| timechart span=10s max($introspection_field$)</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <!-- Event Annotation Search -->
+        <!-- Event Annotation Colors -->
+        <option name="charting.annotation.categoryColors">{"ERROR":"0xff3300","WARN":"0xff9900"}</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <html id="html_code_internal" depends="$showInternal$">
+        <pre>
+&lt;chart&gt;
+  &lt;title&gt;$introspection_field$ in _introspection  &amp;  splunkd error/warn&lt;/title&gt;
+  &lt;search&gt;
+    &lt;query&gt;index=_introspection host=splunk70 component=Hostwide 
+    | timechart span=10s max($introspection_field$)&lt;/query&gt;
+    &lt;earliest&gt;$time.earliest$&lt;/earliest&gt;
+    &lt;latest&gt;$time.latest$&lt;/latest&gt;
+    &lt;sampleRatio&gt;1&lt;/sampleRatio&gt;
+  &lt;/search&gt;
+  ...
+  <font color="#ff0000">&lt;!-- Event Annotation Search --&gt;
+  &lt;search type="annotation"&gt;
+    &lt;query&gt;index=_internal host=splunk70 sourcetype=splunkd (log_level=ERROR OR log_level=WARN) 
+     eval annotation_label = message, annotation_category = log_level&lt;/query&gt;
+    &lt;earliest&gt;$time.earliest$&lt;/earliest&gt;
+    &lt;latest&gt;$time.latest$&lt;/latest&gt;
+    &lt;sampleRatio&gt;1&lt;/sampleRatio&gt;
+  &lt;/search&gt;</font>
+  ...
+  <font color="#ff0000">&lt;!-- Event Annotation Colors --&gt;
+  &lt;option name="charting.annotation.categoryColors"&gt;{"ERROR":"0xff3300","WARN":"0xff9900"}&lt;/option&gt;</font>
+  ...
+&lt;/chart&gt;
+        </pre>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Compare Series</title>
+      <chart>
+        <search>
+          <query>| mstats max(_value) as value where (index=metrics OR index=metrics_hash) AND metric_name=$metric_name$ by host span=10s 
+| xyseries _time host value</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+</form>

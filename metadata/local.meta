@@ -1,0 +1,25 @@
+[app/ui]
+version = 7.0.0
+modtime = 1507533287.126959000
+
+[app/launcher]
+version = 7.0.0
+modtime = 1507533287.127860000
+
+[views/splunk_70_visualizations]
+owner = admin
+version = 7.0.0
+modtime = 1508292140.799015000
+
+[nav/default]
+version = 7.0.0
+modtime = 1508292390.541734000
+
+[views/metrics_performance]
+version = 7.0.0
+modtime = 1508225719.503010000
+
+[props/collectd_json]
+owner = admin
+version = 7.0.0
+modtime = 1507562462.056835000

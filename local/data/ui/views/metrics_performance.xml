@@ -1,0 +1,239 @@
+<form stylesheet="kikeyama.css">
+  <label>Metrics Performance</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label>Date / Time</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="metric_name">
+      <label>Metric Name</label>
+      <default>cpu.percent.idle.value</default>
+      <fieldForLabel>metric_name</fieldForLabel>
+      <fieldForValue>metric_name</fieldForValue>
+      <search>
+        <query>| mcatalog values(metric_name) as metric_name where index=metrics 
+| mvexpand metric_name 
+| eval type = split(metric_name, "."), type_0 = mvindex(type, 0), type_1 = mvindex(type, 1), type_2 = mvindex(type, 2) 
+| fields - type</query>
+        <earliest>$time.earliest$</earliest>
+        <latest>$time.latest$</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="function">
+      <label>mstats Function</label>
+      <choice value="max">Max</choice>
+      <choice value="min">Min</choice>
+      <choice value="p95">95 Percentile</choice>
+      <choice value="p5">5 Percentile</choice>
+      <choice value="avg">Average</choice>
+      <choice value="median">Median</choice>
+      <choice value="latest">Latest</choice>
+      <default>max</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Dimensions</title>
+      <html>
+        <pre>| mcatalog values(_dims) as dimensions where index=metrics AND metric_name=$metric_name$ by host metric_name 
+| mvexpand dimensions</pre>
+      </html>
+      <table>
+        <search>
+          <query>| mcatalog values(_dims) as dimensions where index=metrics AND metric_name=$metric_name$ by host metric_name 
+| mvexpand dimensions</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Metrics Search</title>
+      <input type="link" token="metric_index" id="link_switcher">
+        <label></label>
+        <choice value="metrics">Metrics (Non-Hash)</choice>
+        <choice value="metrics_hash">Metrics (Hash)</choice>
+        <default>metrics</default>
+      </input>
+      <html>
+        <pre>| mstats $function$(_value) as value where index=$metric_index$ AND sourcetype=collectd_http metric_name=$metric_name$ by host span=10s 
+| xyseries _time host value</pre>
+      </html>
+      <chart>
+        <search>
+          <query>| mstats $function$(_value) as value where index=$metric_index$ AND sourcetype=collectd_http metric_name=$metric_name$ by host span=10s 
+| xyseries _time host value</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+          <done>
+            <set token="metric_runduration">$job.runDuration$</set>
+            <set token="metric_resultcount">$job.resultCount$</set>
+            <set token="metric_eventcount">$job.eventCount$</set>
+            <set token="metric_scancount">$job.scanCount$</set>
+            <set token="metric_sid">$job.sid$</set>
+          </done>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <html>
+        Returned <code>$metric_resultcount$</code> results, by scanning <code>$metric_scancount$</code> events, in <code>$metric_runduration$</code> seconds. (sid: <code>$metric_sid$</code>)
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Events Search</title>
+      <html>
+        <pre>index=collectd_event 
+| eval metric_name = plugin . "." . type . "." . type_instance . ".value" 
+| search metric_name=$metric_name$ 
+| timechart span=10s $function$(values{}) as value by host</pre>
+      </html>
+      <chart>
+        <search>
+          <query>index=collectd_event 
+| eval metric_name = plugin . "." . type . "." . type_instance . ".value" 
+| search metric_name=$metric_name$ 
+| timechart span=10s $function$(values{}) as value by host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+          <done>
+            <set token="event_runduration">$job.runDuration$</set>
+            <set token="event_resultcount">$job.resultCount$</set>
+            <set token="event_eventcount">$job.eventCount$</set>
+            <set token="event_scancount">$job.scanCount$</set>
+            <set token="event_sid">$job.sid$</set>
+          </done>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+      <html>
+        Returned <code>$event_resultcount$</code> results, by scanning <code>$event_scancount$</code> events, in <code>$event_runduration$</code> seconds. (sid: <code>$event_sid$</code>)
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Metrics Search Speed Improvement (vs Event Search)</title>
+      <html>
+        <pre>| rest /services/search/jobs/$metric_sid$ 
+| rename runDuration as metricsDuration 
+| appendcols 
+    [rest /services/search/jobs/$event_sid$ 
+    | rename runDuration as eventDuration] 
+| eval speed_percent = (eventDuration - metricsDuration) / metricsDuration * 100 
+| fields speed_percent</pre>
+      </html>
+      <single>
+        <search>
+          <query>| rest /services/search/jobs/$metric_sid$ 
+| rename runDuration as metricsDuration 
+| appendcols 
+    [rest /services/search/jobs/$event_sid$ 
+    | rename runDuration as eventDuration] 
+| eval speed_percent = (eventDuration - metricsDuration) / metricsDuration * 100 
+| fields speed_percent</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unit">%</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+</form>
