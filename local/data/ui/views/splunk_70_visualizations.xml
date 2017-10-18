@@ -28,32 +28,6 @@
   <row>
     <panel>
       <title>Event Annotations</title>
-      <input type="dropdown" token="metric_name" id="input_metrics" depends="$showMetrics$">
-        <label></label>
-        <default>memory.buffered.value</default>
-        <fieldForLabel>metric_name</fieldForLabel>
-        <fieldForValue>metric_name</fieldForValue>
-        <search>
-          <query>| mcatalog values(metric_name) as metric_name where index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" 
-| mvexpand metric_name</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-        </search>
-      </input>
-      <input type="dropdown" token="introspection_field" id="input_internal" depends="$showInternal$">
-        <label></label>
-        <default>data.cpu_user_pct</default>
-        <fieldForLabel>field</fieldForLabel>
-        <fieldForValue>field</fieldForValue>
-        <search>
-          <query>index=_introspection component=Hostwide 
-| fieldsummary maxvals=1 
-| search field=data.cpu* OR field=data.mem* OR field=data.swap* AND numeric_count&gt;0 
-| fields field</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-        </search>
-      </input>
       <input type="link" token="annotation" id="link_switcher">
         <label></label>
         <choice value="metrics">Metrics &amp; Syslog</choice>
@@ -70,6 +44,44 @@
         </change>
         <default>metrics</default>
       </input>
+      <input type="dropdown" token="metric_name" id="input_metrics" depends="$showMetrics$">
+        <label>Metrics</label>
+        <default>memory.buffered.value</default>
+        <fieldForLabel>metric_name</fieldForLabel>
+        <fieldForValue>metric_name</fieldForValue>
+        <search>
+          <query>| mcatalog values(metric_name) as metric_name where index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" 
+| mvexpand metric_name</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="host" id="input_hosts" depends="$showMetrics$">
+        <label>Host</label>
+        <default>ip-172-31-41-59.us-west-2.compute.internal</default>
+        <fieldForLabel>host</fieldForLabel>
+        <fieldForValue>host</fieldForValue>
+        <search>
+          <query>| mcatalog values(host) as host where (index=metrics OR index=metrics_hash) 
+| mvexpand host</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="introspection_field" id="input_internal" depends="$showInternal$">
+        <label>Metric Fields</label>
+        <default>data.cpu_user_pct</default>
+        <fieldForLabel>field</fieldForLabel>
+        <fieldForValue>field</fieldForValue>
+        <search>
+          <query>index=_introspection component=Hostwide 
+| fieldsummary maxvals=1 
+| search field=data.cpu* OR field=data.mem* OR field=data.swap* AND numeric_count&gt;0 
+| fields field</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </input>
       <html id="html_source_metrics" depends="$showMetrics$">
         <div>
           <strong>chart</strong>: <code>$metric_name$</code> metric series</div>
@@ -80,7 +92,7 @@
       <chart id="chart_metrics" depends="$showMetrics$">
         <title>Metrics Chart &amp; Syslog</title>
         <search>
-          <query>| mstats max(_value) as value where metric_name=$metric_name$ AND index=metrics AND sourcetype=collectd_http AND host="ip-172-31-41-59.us-west-2.compute.internal" by host span=10s 
+          <query>| mstats max(_value) as value where metric_name=$metric_name$ AND index=metrics AND sourcetype=collectd_http AND host="$host$" by host span=10s 
 | xyseries _time host value</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
